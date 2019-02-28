@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import scipy.linalg as linalg
 import numpy as np
 import pandas as pd
+from scipy import stats
 
 # Load the csv data using the Pandas library
 filename = 'https://web.stanford.edu/~hastie/ElemStatLearn//datasets/SAheart.data'
@@ -15,6 +16,8 @@ y = raw_data[:,-1]
 
 N,M = X.shape
 n = np.unique(y)
+classNames = ['CHD Negative','CHD Positive']
+C = len(classNames)
 
 cols = range(1, M+1) 
 
@@ -53,6 +56,7 @@ plt.xlabel('Principal component');
 plt.ylabel('Variance explained');
 plt.legend(['Individual','Cumulative','Threshold'])
 plt.grid()
+plt.savefig('Figures/variance_explained.png')
 plt.show()
 
 
@@ -62,10 +66,11 @@ plt.title('CHD projected on PCs')
 for c in n:
     # select indices belonging to class c:
     class_mask = (y == c)
-    plt.plot(Z[class_mask,0], Z[class_mask,1], 'o')
+    plt.plot(Z[class_mask,0], Z[class_mask,1], 'o',alpha=0.5)
 plt.legend(n)
 plt.xlabel('PC1')
 plt.ylabel('PC2')
+plt.savefig('Figures/projectedPCA.png')
 
 #Coefficients of the PCA components per attribute
 plt.figure()
@@ -82,6 +87,7 @@ plt.ylabel('Component coefficients')
 plt.legend(legendStrs)
 plt.grid()
 plt.title('PCA Component Coefficients')
+plt.savefig('Figures/attributes_PCA.png')
 plt.show()
 
 
@@ -92,6 +98,7 @@ plt.xticks(r, attributeNames, rotation=45)
 plt.ylabel('Standard deviation')
 plt.xlabel('Attributes')
 plt.title('Attribute standard deviations')
+plt.savefig('Figures/attributes_std.png')
 
 #Standardize X to a unit standard deviation
 Xs = Xc/np.std(Xc,0)
@@ -106,7 +113,6 @@ j = 1
 # Make the plot
 plt.figure(figsize=(10,15))
 plt.subplots_adjust(hspace=.4)
-plt.title('NanoNose: Effect of standardization')
 nrows=3
 ncols=2
 
@@ -162,5 +168,83 @@ for k in range(2):
     plt.legend(['Individual','Cumulative','Threshold'])
     plt.grid()
     plt.title(titles[k]+'\n'+'Variance explained')
+
+plt.savefig('Figures/principal_components.png')
+plt.show()
+
+#Summary statistics
+X_mean = X.mean(axis=0)
+X_std = X.std(axis=0,ddof=1)
+X_median = np.median(X,axis=0)
+X_range = X.max(axis=0)-X.min(axis=0)
+
+cov_X = np.cov(X, rowvar=False, ddof=1)
+corrcoef_X = np.corrcoef(X, rowvar=False)
+
+
+plt.figure(figsize=(8,10))
+u = np.floor(np.sqrt(M)); v = np.ceil(float(M)/u)
+for i in range(M):
+    if i != 4:
+        plt.subplot(u,v,i+1)
+        plt.hist(X[:,i], color=(0.2, 0.8-i*0.1, 0.4))
+        plt.xlabel(attributeNames[i])
+        plt.ylim(0,N/2)
+    
+plt.savefig('Figures/attributes_histogram.png')
+plt.show()
+#Boxplot of each atribbute of the dataset
+#without the famhist attribute
+plt.figure(figsize=(8,10))
+u = np.floor(np.sqrt(M)); v = np.ceil(float(M)/u)
+for i in range(M):
+    if i != 4:
+        plt.subplot(u,v,i+1)
+        plt.boxplot(X[:,i])
+        plt.xticks([],attributeNames[i])
+        plt.ylabel('')
+        plt.title(attributeNames[i])
+plt.savefig('Figures/attributes_boxplot.png')
+plt.show()
+
+#Plot a boxplot of each attribute for each class considering the standardized dataset
+#without the famhist attribute
+plt.figure(figsize=(14,7))
+for c in range(C):
+    plt.subplot(1,C,c+1)
+    class_mask = (y==c) 
+    
+    plt.boxplot(np.hstack((Xs[class_mask,0:4],Xs[class_mask,5:])))
+    plt.title('Class: '+classNames[c])
+    plt.xticks(range(1,len(attributeNames)), [a for a in np.hstack((attributeNames[:4],attributeNames[5:]))], rotation=45)
+    y_up = Xs.max()+(Xs.max()-Xs.min())*0.1; y_down = Xs.min()-(Xs.max()-Xs.min())*0.1
+    plt.ylim(y_down, y_up)
+
+plt.savefig('Figures/class_boxplot.png')
+
+plt.show()
+
+
+Xaux = np.hstack((Xs[:,0:4],Xs[:,5:]))
+plt.figure(figsize=(24,20))
+
+for m1 in range(M-1):
+    for m2 in range(M-1):
+        plt.subplot(M-1, M-1, m1*(M-1) + m2 + 1)
+        for c in range(C):
+            class_mask = (y==c)
+            plt.plot(np.array(Xaux[class_mask,m2]), np.array(Xaux[class_mask,m1]), '.',alpha=0.5)
+            if m1==M-2:
+                plt.xlabel(attributeNames[m2])
+            else:
+                plt.xticks([])
+            if m2==0:
+                plt.ylabel(attributeNames[m1])
+            else:
+                plt.yticks([])
+            #ylim(0,X.max()*1.1)
+            #xlim(0,X.max()*1.1)
+plt.legend(classNames)
+plt.savefig('Figures/attribute_correlation.png')
 
 plt.show()
