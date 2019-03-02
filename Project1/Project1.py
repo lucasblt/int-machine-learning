@@ -52,7 +52,7 @@ rhos = (Ss*Ss) / (Ss*Ss).sum()
 Zs = Xs @ Vs
 
 threshold = 0.90
-
+'''
 # Plot variance explained
 plt.figure()
 plt.plot(range(1,len(rhoc)+1),rhoc,'x-')
@@ -78,9 +78,10 @@ plt.legend(n)
 plt.xlabel('PC1')
 plt.ylabel('PC2')
 plt.savefig('Figures/projectedPCA.png')
-
+'''
 #Coefficients of the PCA components per attribute
-plt.figure()
+plt.figure(figsize=(16,5))
+plt.subplot(1,2,1)
 pcs = [0,1,2]
 legendStrs = ['PC'+str(e+1) for e in pcs]
 c = ['r','g','b']
@@ -93,12 +94,28 @@ plt.xlabel('Attributes')
 plt.ylabel('Component coefficients')
 plt.legend(legendStrs)
 plt.grid()
-plt.title('PCA Component Coefficients')
+plt.title(r'PC of Attributes with $\mu = 0$')
+
+plt.subplot(1,2,2)
+pcs = [0,1,2]
+legendStrs = ['PC'+str(e+1) for e in pcs]
+c = ['r','g','b']
+bw = .2
+r = np.arange(1,M+1)
+for i in pcs:    
+    plt.bar(r+i*bw, Vs[:,i], width=bw)
+plt.xticks(r+bw, attributeNames, rotation=45)
+plt.xlabel('Attributes')
+plt.ylabel('Component coefficients')
+plt.legend(legendStrs)
+plt.grid()
+plt.title(r'PC of Attributes with $\mu = 0$ and $\sigma = 1$')
+
 plt.savefig('Figures/attributes_PCA.png')
 plt.show()
 
 
-#Plot attributes' standar deviations
+#Plot attributes' standard deviations
 r = np.arange(1,X.shape[1]+1)
 plt.bar(r, np.std(X,0))
 plt.xticks(r, attributeNames, rotation=45)
@@ -138,13 +155,14 @@ for k in range(2):
     
     # Plot projection
     plt.subplot(nrows, ncols, 1+k)
+    
     C = len(n)
     for c in range(C):
         plt.plot(Z[y==c,i], Z[y==c,j], '.', alpha=.5)
     plt.xlabel('PC'+str(i+1))
     plt.xlabel('PC'+str(j+1))
     plt.title(titles[k] + '\n' + 'Projection' )
-    plt.legend(n)
+    plt.legend(classNames)
     plt.axis('equal')
     
     # Plot attribute coefficients in principal component space
@@ -174,6 +192,7 @@ for k in range(2):
     plt.legend(['Individual','Cumulative','Threshold'])
     plt.grid()
     plt.title(titles[k]+'\n'+'Variance explained')
+    
 
 plt.savefig('Figures/principal_components.png')
 plt.show()
@@ -188,7 +207,7 @@ cov_X = np.cov(X, rowvar=False, ddof=1)
 corrcoef_X = np.corrcoef(X, rowvar=False)
 
 
-plt.figure(figsize=(8,10))
+plt.figure(figsize=(9,10))
 u = np.floor(np.sqrt(M)); v = np.ceil(float(M)/u)
 for i in range(M):
     if i != 4:
@@ -196,12 +215,12 @@ for i in range(M):
         plt.hist(X[:,i], color=(0.2, 0.8-i*0.1, 0.4))
         plt.xlabel(attributeNames[i])
         plt.ylim(0,N/2)
-    
+
 plt.savefig('Figures/attributes_histogram.png')
 plt.show()
 #Boxplot of each atribbute of the dataset
 #without the famhist attribute
-plt.figure(figsize=(8,10))
+plt.figure(figsize=(9,10))
 u = np.floor(np.sqrt(M)); v = np.ceil(float(M)/u)
 for i in range(M):
     if i != 4:
