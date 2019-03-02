@@ -79,6 +79,8 @@ plt.xlabel('PC1')
 plt.ylabel('PC2')
 plt.savefig('Figures/projectedPCA.png')
 '''
+
+fig_no = 1
 #Coefficients of the PCA components per attribute
 plt.figure(figsize=(16,5))
 plt.subplot(1,2,1)
@@ -111,9 +113,9 @@ plt.legend(legendStrs)
 plt.grid()
 plt.title(r'PC of Attributes with $\mu = 0$ and $\sigma = 1$')
 
-plt.savefig('Figures/attributes_PCA.png')
+plt.savefig('Figures/Fig{}_attributes_PCA.png'.format(fig_no),bbox_inches = 'tight')
 plt.show()
-
+fig_no += 1
 
 #Plot attributes' standard deviations
 r = np.arange(1,X.shape[1]+1)
@@ -122,7 +124,8 @@ plt.xticks(r, attributeNames, rotation=45)
 plt.ylabel('Standard deviation')
 plt.xlabel('Attributes')
 plt.title('Attribute standard deviations')
-plt.savefig('Figures/attributes_std.png')
+plt.savefig('Figures/Fig{}_attributes_std.png'.format(fig_no),bbox_inches = 'tight')
+fig_no += 1
 
 #Standardize X to a unit standard deviation
 Xcs = [Xc, Xs]
@@ -194,8 +197,9 @@ for k in range(2):
     plt.title(titles[k]+'\n'+'Variance explained')
     
 
-plt.savefig('Figures/principal_components.png')
+plt.savefig('Figures/Fig{}_principal_components.png'.format(fig_no),bbox_inches = 'tight')
 plt.show()
+fig_no += 1
 
 #Summary statistics
 X_mean = X.mean(axis=0)
@@ -219,8 +223,10 @@ for i in range(M):
         plt.ylim(0,N/2)
 
 
-plt.savefig('Figures/attributes_histogram.png')
+plt.savefig('Figures/Fig{}_attributes_histogram.png'.format(fig_no),bbox_inches = 'tight')
 plt.show()
+fig_no += 1
+
 #Boxplot of each atribbute of the dataset
 #without the famhist attribute
 plt.figure(figsize=(15,6))
@@ -232,8 +238,9 @@ for i in range(M):
         plt.xticks([],attributeNames[i])
         plt.ylabel('')
         plt.title(attributeNames[i])
-plt.savefig('Figures/attributes_boxplot.png')
+plt.savefig('Figures/Fig{}_attributes_boxplot.png'.format(fig_no),bbox_inches = 'tight')
 plt.show()
+fig_no += 1
 
 #Plot a boxplot of each attribute for each class considering the standardized dataset
 #without the famhist attribute
@@ -248,10 +255,9 @@ for c in range(C):
     y_up = Xs.max()+(Xs.max()-Xs.min())*0.1; y_down = Xs.min()-(Xs.max()-Xs.min())*0.1
     plt.ylim(y_down, y_up)
 
-plt.savefig('Figures/class_boxplot.png')
-
+plt.savefig('Figures/Fig{}_class_boxplot.png'.format(fig_no),bbox_inches = 'tight')
 plt.show()
-
+fig_no += 1
 
 Xaux = np.hstack((Xs[:,0:4],Xs[:,5:]))
 plt.figure(figsize=(24,20))
@@ -263,18 +269,17 @@ for m1 in range(M-1):
             class_mask = (y==c)
             plt.plot(np.array(Xaux[class_mask,m2]), np.array(Xaux[class_mask,m1]), '.',alpha=0.5)
             if m1==M-2:
-                plt.xlabel(attributeNames[m2],fontsize = 'medium')
+                plt.xlabel(attributeNames[m2],fontsize = 'xx-large')
             else:
                 plt.xticks([])
             if m2==0:
-                plt.ylabel(attributeNames[m1],fontsize = 'medium')
+                plt.ylabel(attributeNames[m1],fontsize = 'xx-large')
             else:
                 plt.yticks([])
             #ylim(0,X.max()*1.1)
             #xlim(0,X.max()*1.1)
 plt.legend(classNames)
-plt.savefig('Figures/attribute_correlation.png')
-
+plt.savefig('Figures/Fig{}_attribute_correlation.png'.format(fig_no),bbox_inches = 'tight')
 plt.show()
 
 #Statistics
