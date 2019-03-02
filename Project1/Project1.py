@@ -1,15 +1,20 @@
+#02450 - Introduction to Machine Learning and Data Mining
+#Assignment 1
+#Students:
+#Everton Spader - s190045
+#Lucas Beltram - s182360
 
 import matplotlib.pyplot as plt
 import scipy.linalg as linalg
 import numpy as np
 import pandas as pd
 
-# Load the csv data using the Pandas library
+# Load the csv dataset into a pandas data frame
 filename = 'https://web.stanford.edu/~hastie/ElemStatLearn//datasets/SAheart.data'
 df = pd.read_csv(filename)
-
 raw_data = df.get_values()
 
+#
 X = raw_data[:,1:-1]
 y = raw_data[:,-1]
 
@@ -52,33 +57,6 @@ rhos = (Ss*Ss) / (Ss*Ss).sum()
 Zs = Xs @ Vs
 
 threshold = 0.90
-'''
-# Plot variance explained
-plt.figure()
-plt.plot(range(1,len(rhoc)+1),rhoc,'x-')
-plt.plot(range(1,len(rhoc)+1),np.cumsum(rhoc),'o-')
-plt.plot([1,len(rhoc)],[threshold, threshold],'k--')
-plt.title('Variance explained by principal components');
-plt.xlabel('Principal component');
-plt.ylabel('Variance explained');
-plt.legend(['Individual','Cumulative','Threshold'])
-plt.grid()
-plt.savefig('Figures/variance_explained.png')
-plt.show()
-
-
-# Plot PCA of the data
-f = plt.figure()
-plt.title('CHD projected on PCs')
-for c in n:
-    # select indices belonging to class c:
-    class_mask = (y == c)
-    plt.plot(Zc[class_mask,0], Zc[class_mask,1], 'o',alpha=0.5)
-plt.legend(n)
-plt.xlabel('PC1')
-plt.ylabel('PC2')
-plt.savefig('Figures/projectedPCA.png')
-'''
 
 fig_no = 1
 #Coefficients of the PCA components per attribute
@@ -163,7 +141,7 @@ for k in range(2):
     for c in range(C):
         plt.plot(Z[y==c,i], Z[y==c,j], '.', alpha=.5)
     plt.xlabel('PC'+str(i+1))
-    plt.xlabel('PC'+str(j+1))
+    plt.ylabel('PC'+str(j+1))
     plt.title(titles[k] + '\n' + 'Projection' )
     plt.legend(classNames)
     plt.axis('equal')
@@ -212,6 +190,8 @@ X_range = X_max - X_min
 
 cov_X = np.cov(X, rowvar=False, ddof=1)
 corrcoef_X = np.corrcoef(X, rowvar=False)
+cov_Xs = np.cov(Xs, rowvar=False, ddof=1)
+corrcoef_Xs = np.corrcoef(Xs, rowvar=False)
 
 plt.figure(figsize=(15,6))
 u = np.floor(np.sqrt(M)-1); v = np.ceil(float(M)/u)
@@ -260,6 +240,7 @@ plt.show()
 fig_no += 1
 
 Xaux = np.hstack((Xs[:,0:4],Xs[:,5:]))
+an = np.hstack((attributeNames[0:4],attributeNames[5:]))
 plt.figure(figsize=(24,20))
 
 for m1 in range(M-1):
@@ -269,11 +250,11 @@ for m1 in range(M-1):
             class_mask = (y==c)
             plt.plot(np.array(Xaux[class_mask,m2]), np.array(Xaux[class_mask,m1]), '.',alpha=0.5)
             if m1==M-2:
-                plt.xlabel(attributeNames[m2],fontsize = 'xx-large')
+                plt.xlabel(an[m2],fontsize = 'xx-large')
             else:
                 plt.xticks([])
             if m2==0:
-                plt.ylabel(attributeNames[m1],fontsize = 'xx-large')
+                plt.ylabel(an[m1],fontsize = 'xx-large')
             else:
                 plt.yticks([])
             #ylim(0,X.max()*1.1)
@@ -294,3 +275,11 @@ pc_s = np.vstack((np.around(rhos,decimals=4),np.around(np.cumsum(100*rhos),decim
 
 pc_df = pd.DataFrame(np.hstack((PCA,pc_c,pc_s)))
 pc_df.to_excel('PCcomponents.xlsx',index=False)
+
+cov_matrix = np.vstack((attributeNames,cov_Xs)).T
+cov_df = pd.DataFrame(cov_matrix)
+
+corr_matrix = np.vstack((attributeNames,corrcoef_Xs)).T
+corr_df = pd.DataFrame(corr_matrix)
+corr_df.to_excel('corr_matrix.xlsx',index=False)
+
