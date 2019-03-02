@@ -200,15 +200,17 @@ plt.show()
 #Summary statistics
 X_mean = X.mean(axis=0)
 X_std = X.std(axis=0,ddof=1)
+X_var = X.var(axis=0,ddof=1)
 X_median = np.median(X,axis=0)
-X_range = X.max(axis=0)-X.min(axis=0)
+X_max = X.max(axis=0)
+X_min = X.min(axis=0)
+X_range = X_max - X_min
 
 cov_X = np.cov(X, rowvar=False, ddof=1)
 corrcoef_X = np.corrcoef(X, rowvar=False)
 
-
-plt.figure(figsize=(9,10))
-u = np.floor(np.sqrt(M)); v = np.ceil(float(M)/u)
+plt.figure(figsize=(15,6))
+u = np.floor(np.sqrt(M)-1); v = np.ceil(float(M)/u)
 for i in range(M):
     if i != 4:
         plt.subplot(u,v,i+1)
@@ -216,12 +218,13 @@ for i in range(M):
         plt.xlabel(attributeNames[i])
         plt.ylim(0,N/2)
 
+
 plt.savefig('Figures/attributes_histogram.png')
 plt.show()
 #Boxplot of each atribbute of the dataset
 #without the famhist attribute
-plt.figure(figsize=(9,10))
-u = np.floor(np.sqrt(M)); v = np.ceil(float(M)/u)
+plt.figure(figsize=(15,6))
+u = np.floor(np.sqrt(M)-1); v = np.ceil(float(M)/u)
 for i in range(M):
     if i != 4:
         plt.subplot(u,v,i+1)
@@ -260,11 +263,11 @@ for m1 in range(M-1):
             class_mask = (y==c)
             plt.plot(np.array(Xaux[class_mask,m2]), np.array(Xaux[class_mask,m1]), '.',alpha=0.5)
             if m1==M-2:
-                plt.xlabel(attributeNames[m2])
+                plt.xlabel(attributeNames[m2],fontsize = 'medium')
             else:
                 plt.xticks([])
             if m2==0:
-                plt.ylabel(attributeNames[m1])
+                plt.ylabel(attributeNames[m1],fontsize = 'medium')
             else:
                 plt.yticks([])
             #ylim(0,X.max()*1.1)
@@ -275,7 +278,7 @@ plt.savefig('Figures/attribute_correlation.png')
 plt.show()
 
 #Statistics
-stats = np.vstack((attributeNames,X.mean(0), X.std(0),X.var(0))).T
+stats = np.vstack((attributeNames,X_mean, X_std, X_var, X_median, X_max, X_min, X_range)).T
 stat_df = pd.DataFrame(stats)
 stat_df.to_excel('attibutesStats.xlsx',index=False)
 
