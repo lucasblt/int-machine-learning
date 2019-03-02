@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import scipy.linalg as linalg
 import numpy as np
 import pandas as pd
-from scipy import stats
 
 # Load the csv data using the Pandas library
 filename = 'https://web.stanford.edu/~hastie/ElemStatLearn//datasets/SAheart.data'
@@ -36,21 +35,29 @@ X = np.hstack((X[:,0:4],np.array([famHistLc]).T,X[:,5:])).astype(np.float)
 # Center the data (subtract mean column values)
 Xc = X - np.ones((N,1))*X.mean(0)
 # PCA by computing SVD of Y
-U,S,V = linalg.svd(Xc,full_matrices=False)
-V = V.T
-
+Uc,Sc,Vc = linalg.svd(Xc,full_matrices=False)
+Vc = Vc.T
 # Compute variance explained by principal components
-rho = (S*S) / (S*S).sum()
+rhoc = (Sc*Sc) / (Sc*Sc).sum()
 # Project data onto principal component space usin dot product (@)
-Z = Xc @ V
+Zc = Xc @ Vc
+
+
+#Standardize and compute PCA components
+Xs = Xc/np.std(Xc,0)
+Us,Ss,Vs = linalg.svd(Xs,full_matrices=False)
+Vs = Vs.T
+rhos = (Ss*Ss) / (Ss*Ss).sum()
+
+Zs = Xs @ Vs
 
 threshold = 0.90
 
 # Plot variance explained
 plt.figure()
-plt.plot(range(1,len(rho)+1),rho,'x-')
-plt.plot(range(1,len(rho)+1),np.cumsum(rho),'o-')
-plt.plot([1,len(rho)],[threshold, threshold],'k--')
+plt.plot(range(1,len(rhoc)+1),rhoc,'x-')
+plt.plot(range(1,len(rhoc)+1),np.cumsum(rhoc),'o-')
+plt.plot([1,len(rhoc)],[threshold, threshold],'k--')
 plt.title('Variance explained by principal components');
 plt.xlabel('Principal component');
 plt.ylabel('Variance explained');
@@ -66,7 +73,7 @@ plt.title('CHD projected on PCs')
 for c in n:
     # select indices belonging to class c:
     class_mask = (y == c)
-    plt.plot(Z[class_mask,0], Z[class_mask,1], 'o',alpha=0.5)
+    plt.plot(Zc[class_mask,0], Zc[class_mask,1], 'o',alpha=0.5)
 plt.legend(n)
 plt.xlabel('PC1')
 plt.ylabel('PC2')
@@ -80,7 +87,7 @@ c = ['r','g','b']
 bw = .2
 r = np.arange(1,M+1)
 for i in pcs:    
-    plt.bar(r+i*bw, V[:,i], width=bw)
+    plt.bar(r+i*bw, Vc[:,i], width=bw)
 plt.xticks(r+bw, attributeNames, rotation=45)
 plt.xlabel('Attributes')
 plt.ylabel('Component coefficients')
@@ -101,7 +108,6 @@ plt.title('Attribute standard deviations')
 plt.savefig('Figures/attributes_std.png')
 
 #Standardize X to a unit standard deviation
-Xs = Xc/np.std(Xc,0)
 Xcs = [Xc, Xs]
 
 titles = ['Zero-mean', 'Zero-mean and unit variance']
@@ -248,3 +254,16 @@ plt.legend(classNames)
 plt.savefig('Figures/attribute_correlation.png')
 
 plt.show()
+
+#Statistics
+stats = np.vstack((attributeNames,X.mean(0), X.std(0),X.var(0))).T
+stat_df = pd.DataFrame(stats)
+stat_df.to_excel('attibutesStats.xlsx',index=False)
+
+PCA = np.array([['PC{}'.format(i+1) for i in range(len(rho))]]).T
+#Principal components Centralized and Standardized
+pc_c = np.vstack((np.around(rhoc,decimals=4),np.around(np.cumsum(100*rhoc),decimals=4))).T
+pc_s = np.vstack((np.around(rhos,decimals=4),np.around(np.cumsum(100*rhos),decimals=4))).T
+
+pc_df = pd.DataFrame(np.hstack((PCA,pc_c,pc_s)))
+pc_df.to_excel('PCcomponents.xlsx',index=False)
