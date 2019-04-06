@@ -66,7 +66,7 @@ sigma = np.empty((K, M-1))
 w_noreg = np.empty((M,K))
 
 
-CV = model_selection.KFold(K, shuffle=True)
+CV = model_selection.KFold(K, shuffle=False)
 w = np.empty((M,K,len(lambdas)))
 train_error = np.empty((K,len(lambdas)))
 test_error = np.empty((K,len(lambdas)))
