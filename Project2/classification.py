@@ -1,4 +1,4 @@
-from matplotlib.pyplot import figure, boxplot, xlabel, ylabel, show
+from matplotlib.pyplot import figure, boxplot, xlabel, ylabel, show, savefig
 import numpy as np
 from scipy.io import loadmat
 import sklearn.linear_model as lm
@@ -30,24 +30,16 @@ famHistDict = dict(zip(famHistLabels,[0,1]))
 famHistLc = np.array([famHistDict[cl] for cl in famHistNames])
 X = np.hstack((X[:,0:4],np.array([famHistLc]).T,X[:,5:])).astype(np.float)
 
-#Binary attributes to be removed from dataset
-famhist_idx = attributeNames.index('famhist')
-chd_idx = attributeNames.index('chd')
-
 #Attribute to be predicted based on the other attributes
-y_idx = attributeNames.index('ldl')
+y_idx = attributeNames.index('chd')
 y = X[:,y_idx]
 
-X_cols = list(range(0,y_idx))+ list(range(y_idx+1,famhist_idx))+list(range(famhist_idx+1,chd_idx))
+X_cols = list(range(0,y_idx))
 X = X[:,X_cols]
 N, M = X.shape
-#Remove y and binary attributes from atrributeNames
-attributeNames = attributeNames[0:y_idx] + attributeNames[y_idx+1:famhist_idx] + attributeNames[famhist_idx+1:chd_idx]
 
-# Add offset attribute
-X = np.concatenate((np.ones((X.shape[0],1)),X),1)
-attributeNames = [u'Offset']+attributeNames
-M = M+1
+#Remove y and binary attributes from atrributeNames
+attributeNames = attributeNames[0:y_idx]
 
 ########################### CROSSVALIDATION ###########################
 # Create crossvalidation partition for evaluation
@@ -67,19 +59,9 @@ n_tested=0
 lambdas = np.power(10.,range(-2,9))
 hidden = np.arange(5)+1
 
-# Parameters for neural network
-n_replicates = 1        # number of networks trained in each k-fold
-max_iter = 10000        # 
-model = lambda: torch.nn.Sequential(
-                    torch.nn.Linear(M, n_hidden_units), #M features to n_hidden_units
-                    torch.nn.Tanh(),   # 1st transfer function,
-                    torch.nn.Linear(n_hidden_units, 1), # n_hidden_units to 1 output neuron
-                    # no final tranfer function, i.e. "linear output"
-                    )
-loss_fn = torch.nn.MSELoss() # notice how this is now a mean-squared-error loss
-
 # Outer CV
 k=0
+
 for train_index, test_index in CV.split(X,y):
     # extract training and test set for current CV fold
     X_train_out = X[train_index,:]
@@ -95,9 +77,7 @@ for train_index, test_index in CV.split(X,y):
     X_test_out[:, 1:] = (X_test_out[:, 1:] - mu) / sigma
 
     # Inner CV
-    w_rlr = np.empty((M,K))
-    w = np.empty((M,K,len(lambdas)))
-    test_error = np.empty((K,len(lambdas)))
+    lambda_error = np.empty((K,len(lambdas)))
     hidden_error = np.empty((K,len(hidden)))
 
     k2 = 0
@@ -111,55 +91,67 @@ for train_index, test_index in CV.split(X,y):
         X_test_in = X_train_out[test_index,:]
         y_test_in = y_train_out[test_index]
         
-        ######### Selecting Lambda for the RLR ##########
-        Xty = X_train_in.T @ y_train_in
-        XtX = X_train_in.T @ X_train_in
+        # Extract training and test set for current CV fold, 
+        # and convert them to PyTorch tensors
+        X_train2 = torch.tensor(X_train_in, dtype=torch.float)
+        y_train2 = torch.tensor(y_train_in, dtype=torch.float)
+        X_test2 = torch.tensor(X_test_in, dtype=torch.float)
+        y_test2 = torch.tensor(y_test_in, dtype=torch.uint8)
         
         for l in range(0,len(lambdas)):
-            # Compute parameters for current value of lambda and current CV fold
-            lambdaI = lambdas[l] * np.eye(M)
-            lambdaI[0,0] = 0 # remove bias regularization
-            w[:,k2,l] = np.linalg.solve(XtX+lambdaI,Xty).squeeze()
-            # Evaluate training and test performance
-            test_error[k2,l] = np.power(y_test_in-X_test_in @ w[:,k2,l].T,2).mean(axis=0)
-        
-        ######### Selecting H for the ANN ##########
-        X_train2 = torch.tensor(X_train_out[train_index,:], dtype=torch.float)
-        y_train2 = torch.tensor(y_train_out[train_index], dtype=torch.float)
-        X_test2 = torch.tensor(X_train_out[test_index,:], dtype=torch.float)
-        y_test2 = torch.tensor(y_train_out[test_index], dtype=torch.uint8)
+            clf1 = lm.RidgeClassifier(alpha=lambdas[l]).fit(X_train_in, y_train_in)
+            y_logreg = clf1.predict(X_test_in)
+            lambda_error[k2,l] = 100*(y_logreg!=y_test_in).sum().astype(float)/len(y_test_in)
         
         for h in range(0,len(hidden)):
             n_hidden_units = hidden[h]
+            model = lambda: torch.nn.Sequential(
+                                torch.nn.Linear(M, n_hidden_units),
+            
+                                torch.nn.Tanh(),   
+                                torch.nn.Linear(n_hidden_units, 1),
+                                torch.nn.Sigmoid()
+                                )
+            loss_fn = torch.nn.BCELoss()
+            max_iter = 10000
             net, final_loss, learning_curve = train_neural_net(model,
                                                        loss_fn,
                                                        X=X_train2,
                                                        y=y_train2,
-                                                       n_replicates=n_replicates,
+                                                       n_replicates=1,
                                                        max_iter=max_iter)
-            y_test_est2 = net(X_test2)
-            # Determine errors
-            y_test_est2_np = y_test_est2.type(torch.float).data.numpy().reshape((y_test2.shape[0],))
-            y_test2_np = y_test2.type(torch.float).data.numpy()
-            hidden_error[k2,h] = np.square(y_test2_np-y_test_est2_np).sum(axis=0)/y_test2_np.shape[0]
+            
+            # Determine estimated class labels for test set
+            y_sigmoid = net(X_test2) # activation of final note, i.e. prediction of network
+            y_test_est = y_sigmoid > .5 # threshold output of sigmoidal function
+            
+            # Determine errors and error rate
+            e = (y_test_est != y_test2)[0]
+            hidden_error[k2,h] = 100*(sum(e).type(torch.float)/len(y_test_in)).data.numpy()
         k2 += 1
     
     ######### Selecting Lambda for the RLR ##########
-    opt_val_err[k] = np.min(np.mean(test_error,axis=0))
-    opt_lambda[k] = lambdas[np.argmin(np.mean(test_error,axis=0))]
+    opt_val_err[k] = np.min(np.mean(lambda_error,axis=0))
+    opt_lambda[k] = lambdas[np.argmin(np.mean(lambda_error,axis=0))]
     
     ######### Selecting hidden units for the ANN ##########
     opt_h_val_err[k] = np.min(np.mean(hidden_error,axis=0))
-    opt_h[k] = hidden[np.argmin(np.mean(hidden_error,axis=0))]
+    opt_h[k] = hidden[np.argmin(np.mean(hidden_error,axis=0))]    
     
-    # Evaluate baseline model
-    Error_baseline[k] = np.square(y_test_out-y_train_out.mean()).sum(axis=0)/y_test_out.shape[0]
-        
     # Evaluate rlr model
     Error_rlr[k] = opt_val_err[k]
     
     # Evaluate ann model
     Error_ann[k] = opt_h_val_err[k]
+    
+    # Evaluate baseline model
+    pos = y_test_out.sum()/len(y_test_out)
+    if pos > 0.5:
+        y_base = np.ones(len(y_test_out))
+    else:
+        y_base = np.zeros(len(y_test_out))
+        
+    Error_baseline[k] = 100*(y_base!=y_test_out).sum().astype(float)/len(y_test_out)
 
     k += 1
 
@@ -189,10 +181,9 @@ else:
 # Boxplot to compare classifier error distributions
 figure()
 boxplot(np.concatenate((Error_baseline, Error_rlr),axis=1))
-xlabel('Baseline   vs.   Regularized Linear Regression')
+xlabel('Baseline   vs.   Regularized Logistic Regression')
 ylabel('Cross-validation error [%]')
-savefig('figures/regression/baseline_regression.png',bbox_inches = 'tight')
-
+plt.savefig('figures/classification/baseline_logistic.png',bbox_inches = 'tight')
 show()
 
 ## BASELINE VS ANN ##
@@ -216,7 +207,7 @@ figure()
 boxplot(np.concatenate((Error_baseline, Error_ann),axis=1))
 xlabel('Baseline   vs.   ANN')
 ylabel('Cross-validation error [%]')
-savefig('figures/regression/baseline_ann.png',bbox_inches = 'tight')
+savefig('figures/classification/baseline_ann.png',bbox_inches = 'tight')
 show()
 
 ## RLR VS ANN ##
@@ -238,7 +229,8 @@ else:
 # Boxplot to compare classifier error distributions
 figure()
 boxplot(np.concatenate((Error_rlr, Error_ann),axis=1))
-xlabel('Regularized Linear Regression   vs.   ANN')
+xlabel('Regularized Logistic Regression   vs.   ANN')
 ylabel('Cross-validation error [%]')
-savefig('figures/regression/regression_ann.png',bbox_inches = 'tight')
+savefig('figures/classification/logistic_ann.png',bbox_inches = 'tight')
+
 show()

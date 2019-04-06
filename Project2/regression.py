@@ -1,5 +1,5 @@
 from matplotlib.pylab import (figure, semilogx, loglog, xlabel, ylabel, legend, 
-                           title, subplot, show, grid)
+                           title, subplot, show, grid, savefig)
 import scipy.linalg as linalg
 import numpy as np
 import pandas as pd
@@ -109,22 +109,24 @@ mean_w_vs_lambda = np.squeeze(np.mean(w,axis=1))
 
 figure(figsize=(12,8))
 
-subplot(1,2,1)
 semilogx(lambdas,mean_w_vs_lambda.T[:,1:],'.-') # Don't plot the bias term
 xlabel('Regularization factor')
 ylabel('Mean Coefficient Values')
 grid()
         # You can choose to display the legend, but it's omitted for a cleaner 
         # plot, since there are many attributes
-#        legend(attributeNames[1:], loc='best')
-        
-subplot(1,2,2)
+legend(attributeNames[1:], loc='best')
+savefig('figures/regression/part_a1.png',bbox_inches = 'tight')
+     
+figure(figsize=(12,8))
+
 title('Optimal lambda: 1e{0}'.format(np.log10(opt_lambda)))
 loglog(lambdas,train_err_vs_lambda.T,'b.-',lambdas,test_err_vs_lambda.T,'r.-')
 xlabel('Regularization factor')
 ylabel('Squared error (crossvalidation)')
 legend(['Train error','Validation error'])
 grid()
+savefig('figures/regression/part_a2.png',bbox_inches = 'tight')
 show()
 
 for i in range(len(lambdas)):
