@@ -183,7 +183,7 @@ figure()
 boxplot(np.concatenate((Error_baseline, Error_rlr),axis=1))
 xlabel('Baseline   vs.   Regularized Logistic Regression')
 ylabel('Cross-validation error [%]')
-plt.savefig('figures/classification/baseline_logistic.png',bbox_inches = 'tight')
+savefig('figures/classification/baseline_logistic.png',bbox_inches = 'tight')
 show()
 
 ## BASELINE VS ANN ##
