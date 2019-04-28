@@ -164,14 +164,14 @@ for train_index, test_index in CV.split(X,y):
     
 ## BASELINE VS RLR ##
 
-z = (Error_baseline-Error_rlr)
-zb = z.mean()
-nu = K-1
-sig =  (z-zb).std()  / np.sqrt(K-1)
-alpha = 0.05
+z1 = (Error_baseline-Error_rlr)
+zb1 = z1.mean()
+nu1 = K-1
+sig1 =  (z1-zb1).std()  / np.sqrt(K-1)
+alpha1 = 0.05
 
-zL1 = zb + sig * stats.t.ppf(alpha/2, nu);
-zH1 = zb + sig * stats.t.ppf(1-alpha/2, nu);
+zL1 = zb1 + sig1 * stats.t.ppf(alpha1/2, nu1);
+zH1 = zb1 + sig1 * stats.t.ppf(1-alpha1/2, nu1);
 
 if zL1 <= 0 and zH1 >= 0 :
     print('Models are not significantly different')        
@@ -188,14 +188,14 @@ show()
 
 ## BASELINE VS ANN ##
 
-z = (Error_baseline-Error_ann)
-zb = z.mean()
-nu = K-1
-sig =  (z-zb).std()  / np.sqrt(K-1)
-alpha = 0.05
+z2 = (Error_baseline-Error_ann)
+zb2 = z2.mean()
+nu2 = K-1
+sig2 =  (z2-zb2).std()  / np.sqrt(K-1)
+alpha2 = 0.05
 
-zL2 = zb + sig * stats.t.ppf(alpha/2, nu);
-zH2 = zb + sig * stats.t.ppf(1-alpha/2, nu);
+zL2 = zb2 + sig2 * stats.t.ppf(alpha2/2, nu2);
+zH2 = zb2 + sig2 * stats.t.ppf(1-alpha2/2, nu2);
 
 if zL2 <= 0 and zH2 >= 0 :
     print('Models are not significantly different')        
@@ -212,14 +212,14 @@ show()
 
 ## RLR VS ANN ##
 
-z = (Error_rlr-Error_ann)
-zb = z.mean()
-nu = K-1
-sig =  (z-zb).std()  / np.sqrt(K-1)
-alpha = 0.05
+z3 = (Error_rlr-Error_ann)
+zb3 = z3.mean()
+nu3 = K-1
+sig3 =  (z3-zb3).std()  / np.sqrt(K-1)
+alpha3 = 0.05
 
-zL3 = zb + sig * stats.t.ppf(alpha/2, nu);
-zH3 = zb + sig * stats.t.ppf(1-alpha/2, nu);
+zL3 = zb3 + sig3 * stats.t.ppf(alpha3/2, nu3);
+zH3 = zb3 + sig3 * stats.t.ppf(1-alpha3/2, nu3);
 
 if zL3 <= 0 and zH3 >= 0 :
     print('Models are not significantly different')        
