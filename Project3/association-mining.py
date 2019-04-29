@@ -29,6 +29,7 @@ X_aux = X[:,columns]
 minvalues = np.amin(X_aux, axis = 0)
 maxvalues = np.amax(X_aux, axis = 0)
 medvalues = (minvalues + maxvalues)/2
+#medvalues = np.mean(X_aux, axis = 0)
 
 age_bin = np.zeros([N,3])
 
@@ -36,9 +37,9 @@ X_bin = np.zeros([N,12])
 
 for j in range(6):
     for i in range(N):
-        if X[i,j] < medvalues[j]:
+        if X_aux[i,j] < medvalues[j]:
             X_bin[i,2*j] = 1
-        elif X[i,j] > medvalues[j]:
+        elif X_aux[i,j] > medvalues[j]:
             X_bin[i,2*j+1] = 1
 
 #AGE
@@ -84,5 +85,6 @@ def print_apriori_rules(rules):
     return frules
 
 T = mat2transactions(X_bin,labels)
-rules = apriori(T, min_support=0.8, min_confidence=1)
+rules = apriori(T, min_support=0.8, min_confidence=0.95)
 print_apriori_rules(rules)
+print(medvalues)
